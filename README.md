@@ -21,3 +21,5 @@ Link :
 - https://rust-fuzz.github.io/book/cargo-fuzz.html
 
 - https://github.com/BurntSushi/quickcheck
+
+- https://kemptechnologies.com/load-balancer/load-balancing-algorithms-techniques
