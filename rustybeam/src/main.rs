@@ -1,7 +1,7 @@
 use std::env::args;
 
 mod server;
-use server::server_mod::Server;
+use server::Server;
 
 
 
