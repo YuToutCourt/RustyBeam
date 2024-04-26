@@ -1,7 +1,7 @@
 use std::env::args;
 
 mod server;
-use server::ServerMod::Server;
+use server::server_mod::Server;
 
 
 
@@ -17,6 +17,8 @@ fn main() {
     let ip = &args[1];
     let port = &args[2];
 
-    let rustyBeam = Server::new(ip, port);
-    rustyBeam::start()?;
+    let rusty_beam = Server::new(ip, port);
+
+    // lauch the server
+
 }
