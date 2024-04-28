@@ -1,9 +1,10 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
-use std::io::Result;
+use std::io::{Result, Error};
 use std::thread;
 
-use crate::Server::Server;
+use crate::round_robin::RoundRobin;
+use crate::server::Server;
 
 pub struct LoadBalancer<'a> {
     ip: &'a str,
@@ -13,18 +14,18 @@ pub struct LoadBalancer<'a> {
 }
 
 impl<'a> LoadBalancer<'a> {
-    pub fn new(ip: &'a str, port: &'a str) -> Result<LoadBalancer<'a>> {
+    pub fn new(ip: &'a str, port: &'a str) -> LoadBalancer<'a> {
         let address = format!("{}:{}", ip, port);
 
         let listener = TcpListener::bind(address).expect("Could not bind");
         println!("Server listening on {}:{}", ip, port);
     
-        Ok(LoadBalancer {
+        LoadBalancer {
             ip,
             port,
             listener,
             timeout: 10,
-        })
+        }
     }
 
 
@@ -52,7 +53,6 @@ impl<'a> LoadBalancer<'a> {
     }
 
 
-
     fn handle_client(mut stream: TcpStream) {
         let mut buffer = [0; 1024];
         while match stream.read(&mut buffer) {
@@ -61,9 +61,11 @@ impl<'a> LoadBalancer<'a> {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
 
-                    match Server::new("127.0.0.1", "1337", &message) {
+                    let server: &Result<Server> = RoundRobin::new().next();
+
+                    match server {
                         Ok(mut request) => {
-                            if let Ok(response) = request.get_message() {
+                            if let Ok(response) = request.make_request(&message) {
                                 stream.write_all(&response).unwrap();
                             }
                             else {

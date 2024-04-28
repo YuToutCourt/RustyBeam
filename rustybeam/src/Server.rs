@@ -1,16 +1,17 @@
 use std::net::TcpStream;
 use std::io::{Read, Write};
+use std::io::Result;
+
 
 
 pub struct Server<'a> {
     ip: &'a str,
     port: &'a str,
     stream: TcpStream,
-    message: &'a str,
     buffer: Vec<u8>,
 }
 impl<'a> Server<'a> {
-    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> std::io::Result<Server<'a>> {
+    pub fn new(ip: &'a str, port: &'a str) -> Result<Server<'a>> {
         let address = format!("{}:{}", ip, port);
 
         let stream = TcpStream::connect(address)?;
@@ -20,15 +21,14 @@ impl<'a> Server<'a> {
             ip,
             port,
             stream,
-            message,
             buffer: Vec::new(),
         })
     }
 
 
-    pub fn get_message(&mut self) -> std::io::Result<&Vec<u8>> {
-        &self.stream.write_all(self.message.as_bytes())?;
-        println!("Sent:\n{}", self.message);
+    pub fn make_request(&mut self, message: &str) -> Result<&Vec<u8>> {
+        &self.stream.write_all(message.as_bytes())?;
+        println!("Sent:\n{}", message);
 
         loop {
             let mut chunk = vec![0; 1024];
