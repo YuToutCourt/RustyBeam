@@ -1,5 +1,7 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
+use std::io::{Error, Result};
 use std::thread;
 
 pub struct Server<'a> {
@@ -10,7 +12,7 @@ pub struct Server<'a> {
 }
 
 impl<'a> Server<'a> {
-    pub fn new(ip: &'a str, port: &'a str) -> Result<Server<'a>, std::io::Error> {
+    pub fn new(ip: &'a str, port: &'a str) -> Result<Server<'a>> {
         let address = format!("{}:{}", ip, port);
 
         let listener = TcpListener::bind(address).expect("Could not bind");
@@ -25,35 +27,52 @@ impl<'a> Server<'a> {
     }
 
 
-    pub fn start(&mut self) -> Result<(), std::io::Error> {
-        for stream in self.listener.incoming() {
+    pub fn start(&mut self) -> Result<()> {
+        let listener = self.listener.try_clone().expect("Could not clone listener");
+
+        let handle_client = move |stream: TcpStream| {
+            thread::spawn(move || {
+                Server::handle_client(stream);
+            });
+        };
+
+        for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    println!("New connection: {}", stream.peer_addr().unwrap());
-                    thread::spawn(move || {
-                        self.handle_client(stream);
-                    });
+                    handle_client(stream);
                 }
                 Err(e) => {
-                    println!("Error: {}", e);
+                    eprintln!("An error occurred while accepting a connection: {}", e);
                 }
             }
         }
+
         Ok(())
     }
 
-    fn handle_client(&mut self, mut stream: TcpStream) {
+
+
+    fn handle_client(mut stream: TcpStream) {
         let mut buffer = [0; 1024];
         while match stream.read(&mut buffer) {
             Ok(size) => {
                 if size > 0 {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
-    
-                    let response = Transmitter::new("127.0.0.1", "1337", &message).expect("REASON").get_message().unwrap();
-    
-                    stream.write_all(&response).unwrap();
-    
+
+                    match Transmitter::new("127.0.0.1", "1337", &message) {
+                        Ok(mut trans) => {
+                            if let Ok(reponse) = trans.get_message() {
+                                stream.write_all(&reponse).unwrap();
+                            }
+                            else {
+                                stream.write_all(b"An error occurred while processing the request").unwrap();
+                            }
+                        }
+                        Err(_) => {
+                            stream.write_all(b"An error occurred while processing the request").unwrap();
+                        }
+                    }
                 }
                 true
             },
@@ -75,7 +94,7 @@ pub struct Transmitter<'a> {
     buffer: Vec<u8>,
 }
 impl<'a> Transmitter<'a> {
-    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> Result<Transmitter<'a>, std::io::Error> {
+    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> Result<Transmitter<'a>> {
         let address = format!("{}:{}", ip, port);
 
         let stream = TcpStream::connect(address)?;
@@ -91,7 +110,7 @@ impl<'a> Transmitter<'a> {
     }
 
 
-    pub fn get_message(&mut self) -> Result<&Vec<u8>, std::io::Error> {
+    pub fn get_message(&mut self) -> Result<&Vec<u8>> {
         &self.stream.write_all(self.message.as_bytes())?;
         println!("Sent:\n{}", self.message);
 
@@ -101,7 +120,7 @@ impl<'a> Transmitter<'a> {
             if bytes_read == 0 {
                 break;
             }
-            &self.buffer.extend_from_slice(&chunk[..bytes_read]);
+            let _ = &self.buffer.extend_from_slice(&chunk[..bytes_read]);
         }
 
         let response = String::from_utf8_lossy(&self.buffer).into_owned();
@@ -109,7 +128,5 @@ impl<'a> Transmitter<'a> {
 
         Ok(&self.buffer)
     }
-
-
 
 }

@@ -12,9 +12,9 @@ fn main() {
     let ip = &args[1];
     let port = &args[2];
 
-    let rusty_beam = Server::new(ip, port);
+    let mut rusty_beam = Server::new(ip, port);
 
-
+    rusty_beam.expect("REASON").start().expect("TODO: panic message");
 
 
 }
