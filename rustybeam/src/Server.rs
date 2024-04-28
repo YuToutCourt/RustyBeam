@@ -2,21 +2,21 @@ use std::net::TcpStream;
 use std::io::{Read, Write};
 
 
-pub struct Transmitter<'a> {
+pub struct Server<'a> {
     ip: &'a str,
     port: &'a str,
     stream: TcpStream,
     message: &'a str,
     buffer: Vec<u8>,
 }
-impl<'a> Transmitter<'a> {
-    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> std::io::Result<Transmitter<'a>> {
+impl<'a> Server<'a> {
+    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> std::io::Result<Server<'a>> {
         let address = format!("{}:{}", ip, port);
 
         let stream = TcpStream::connect(address)?;
         println!("Connected to {}:{}", ip, port);
 
-        Ok(Transmitter {
+        Ok(Server {
             ip,
             port,
             stream,

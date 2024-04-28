@@ -12,6 +12,9 @@ Objectifs:
 
 - Gargo fuzz, QuickCheck,
 
+- Donner des règles de répartition de charge: 
+
+
 
 
 Link : 
@@ -23,3 +26,9 @@ Link :
 - https://github.com/BurntSushi/quickcheck
 
 - https://kemptechnologies.com/load-balancer/load-balancing-algorithms-techniques
+
+
+
+## TODO
+
+- Faire en sorte que l'utilisateur puisse choisir l'algorithme du load balancer.

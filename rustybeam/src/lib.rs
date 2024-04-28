@@ -1,3 +1,3 @@
-mod server;
-pub(crate) mod transmitter;
-pub use self::server::Server;
+mod load_balancer;
+pub(crate) mod Server;
+pub use self::load_balancer::LoadBalancer;
