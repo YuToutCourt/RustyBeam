@@ -1,7 +1,8 @@
 use std::env::args;
 
-mod server;
-use server::Server;
+
+use rustybeam::Server;
+
 fn main() {
     let args: Vec<String> = args().collect();
     if args.len() != 3 {
