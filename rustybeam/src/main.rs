@@ -2,11 +2,6 @@ use std::env::args;
 
 mod server;
 use server::Server;
-
-
-
-
-
 fn main() {
     let args: Vec<String> = args().collect();
     if args.len() != 3 {
@@ -19,6 +14,7 @@ fn main() {
 
     let rusty_beam = Server::new(ip, port);
 
-    // lauch the server
+
+
 
 }
