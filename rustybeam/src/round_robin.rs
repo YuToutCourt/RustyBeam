@@ -12,11 +12,7 @@ impl<'a> RoundRobin<'a> {
     pub fn new() -> RoundRobin<'a> {
 
         RoundRobin {
-            server_list: vec![
-                &Server::new("127.0.0.1", "1337"),
-                &Server::new("127.0.0.1", "1338"),
-                &Server::new("127.0.0.1", "1339"),
-            ],
+            server_list: Vec::new(),
             current_index: 0,
         }
     }

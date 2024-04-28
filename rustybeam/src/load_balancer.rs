@@ -1,10 +1,10 @@
 use std::net::{TcpListener, TcpStream};
 use std::io::{Read, Write};
-use std::io::{Result, Error};
+use std::io::Result;
 use std::thread;
 
 use crate::round_robin::RoundRobin;
-use crate::server::Server;
+
 
 pub struct LoadBalancer<'a> {
     ip: &'a str,
@@ -61,11 +61,9 @@ impl<'a> LoadBalancer<'a> {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
 
-                    let server: &Result<Server> = RoundRobin::new().next();
-
-                    match server {
-                        Ok(mut request) => {
-                            if let Ok(response) = request.make_request(&message) {
+                    match RoundRobin::new().next() {
+                        Ok(server) => {
+                            if let Ok(response) = server.make_request(&message) {
                                 stream.write_all(&response).unwrap();
                             }
                             else {
