@@ -32,16 +32,18 @@ impl<'a> LoadBalancer<'a> {
     pub fn start(&mut self) -> Result<()> {
         let listener = self.listener.try_clone().expect("Could not clone listener");
 
-        let handle_client = move |stream: TcpStream| {
+        let mut round_robin = RoundRobin::new();
+
+        let handle_client_thread = move |stream: TcpStream| {
             thread::spawn(move || {
-                LoadBalancer::handle_client(stream);
+                LoadBalancer::handle_client(stream, &mut round_robin);
             });
         };
 
         for stream in listener.incoming() {
             match stream {
                 Ok(stream) => {
-                    handle_client(stream);
+                    handle_client_thread(stream);
                 }
                 Err(e) => {
                     eprintln!("An error occurred while accepting a connection: {}", e);
@@ -53,7 +55,7 @@ impl<'a> LoadBalancer<'a> {
     }
 
 
-    fn handle_client(mut stream: TcpStream) {
+    fn handle_client(mut stream: TcpStream, round_robin: &mut RoundRobin) {
         let mut buffer = [0; 1024];
         while match stream.read(&mut buffer) {
             Ok(size) => {
@@ -61,19 +63,16 @@ impl<'a> LoadBalancer<'a> {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
 
-                    match RoundRobin::new().next() {
-                        Ok(server) => {
-                            if let Ok(response) = server.make_request(&message) {
-                                stream.write_all(&response).unwrap();
-                            }
-                            else {
-                                stream.write_all(b"An error occurred while processing the request").unwrap();
-                            }
-                        }
-                        Err(_) => {
-                            stream.write_all(b"An error occurred while processing the request").unwrap();
-                        }
-                    }
+                    // Get the next server in the list and make a request to it with the message
+                    let server = round_robin.next();
+                    let response = server.make_request(&message).expect("Could not make request");
+
+                    // Send the response back to the client
+                    stream.write_all(response).expect("Could not write to stream");
+
+
+
+
                 }
                 true
             },

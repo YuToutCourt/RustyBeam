@@ -11,18 +11,20 @@ pub struct Server<'a> {
     buffer: Vec<u8>,
 }
 impl<'a> Server<'a> {
-    pub fn new(ip: &'a str, port: &'a str) -> Result<Server<'a>> {
+    pub fn new(ip: &'a str, port: &'a str) -> Server<'a> {
         let address = format!("{}:{}", ip, port);
 
-        let stream = TcpStream::connect(address)?;
-        println!("Connected to {}:{}", ip, port);
-
-        Ok(Server {
-            ip,
-            port,
-            stream,
-            buffer: Vec::new(),
-        })
+        if let Ok(stream) = TcpStream::connect(address) {
+            println!("Connected to {}:{}", ip, port);
+            Server {
+                ip,
+                port,
+                stream,
+                buffer: Vec::new(),
+            }
+        } else {
+            panic!("Could not connect to {}:{}", ip, port);
+        }
     }
 
 
