@@ -1,7 +1,7 @@
-use std::net::{TcpListener, TcpStream};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::io::{Read, Write};
-use std::sync::{Arc, Mutex};
-use std::io::{Error, Result};
+use std::time::Duration;
+use std::io::{Result};
 use std::thread;
 
 pub struct Server<'a> {
@@ -95,11 +95,13 @@ pub struct Transmitter<'a> {
 }
 impl<'a> Transmitter<'a> {
     pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> Result<Transmitter<'a>> {
-        let address = format!("{}:{}", ip, port);
-
-        let stream = TcpStream::connect(address)?;
-        println!("Connected to {}:{}", ip, port);
-
+        let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 1337);
+        let sixty = Duration::new(5, 0);
+        let stream = match TcpStream::connect_timeout(&address, sixty){
+            Ok(a) => a,
+            Err(e) => return Err(e),
+        };
+        println!("{:?}", stream);
         Ok(Transmitter {
             ip,
             port,
