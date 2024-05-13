@@ -1,4 +1,5 @@
 use std::env::args;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 mod server;
 use server::LoadBalancer;
@@ -18,8 +19,8 @@ fn main() {
     let mut rusty_beam = LoadBalancer::new(ip, port);
     let mut round_robin = RoundRobin::new();
 
-
-    let server1 = LoadBalancer::new("127.0.0.1", "1337");
+    round_robin.add_server(SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 1337));
+    
 
     rusty_beam.expect("REASON").start().expect("TODO: panic message");
 

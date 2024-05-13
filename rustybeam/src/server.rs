@@ -1,7 +1,7 @@
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::io::{Read, Write};
 use std::time::Duration;
-use std::io::{Result};
+use std::io::Result;
 use std::thread;
 
 pub struct LoadBalancer<'a> {
@@ -59,7 +59,7 @@ impl<'a> LoadBalancer<'a> {
                 if size > 0 {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
-                    match Server::new(&message) {
+                    match Server::new(&message ) {
                         Ok(mut trans) => {
                             println!("{:?}", trans);
                             if let Ok(reponse) = trans.get_message() {
@@ -90,21 +90,18 @@ text/html;charset=utf-8\r\nContent-Length: 0\r\n\r\n"
 
 #[derive(Debug)]
 pub struct Server<'a> {
-    ip: &'a str,
-    port: &'a str,
     stream: TcpStream,
     message: &'a str,
     buffer: Vec<u8>,
 }
 impl<'a> Server<'a> {
-    pub fn new(message: &'a str ) -> Result<Server<'a>> {
-        let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 1337);
+    pub fn new(message: &'a str, mut round_robin: RoundRobin ) -> Result<Server<'a>> {
+        let address = round_robin.next();
         let sixty = Duration::new(5, 0);
+
         match TcpStream::connect_timeout(&address, sixty){
-            Ok(a) => Ok(Server {
-                ip,
-                port,
-                stream: a,
+            Ok(stream) => Ok(Server {
+                stream: stream,
                 message,
                 buffer: Vec::new(),
             }),
@@ -132,24 +129,24 @@ impl<'a> Server<'a> {
 
 }
 
-pub struct RoundRobin<'a>{
-    servers: Vec<Server<'a>>,
+pub struct RoundRobin{
+    servers: Vec<SocketAddr>,
     current: usize,
 }
 
-impl<'a> RoundRobin<'a> {
-    pub fn new() -> RoundRobin<'a> {
+impl RoundRobin {
+    pub fn new() -> RoundRobin{
         RoundRobin {
             servers: Vec::new(),
             current: 0,
         }
     }
 
-    pub fn add_server(&mut self, server: Server<'a>) {
+    pub fn add_server(&mut self, server: SocketAddr) {
         self.servers.push(server);
     }
 
-    pub fn next(&mut self) -> &Server<'a> {
+    pub fn next(&mut self) -> &SocketAddr {
         let server = &self.servers[self.current];
         if self.current == self.servers.len() - 1 {
             self.current = 0;
