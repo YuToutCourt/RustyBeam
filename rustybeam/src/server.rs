@@ -4,21 +4,21 @@ use std::time::Duration;
 use std::io::{Result};
 use std::thread;
 
-pub struct Server<'a> {
+pub struct LoadBalancer<'a> {
     ip: &'a str,
     port: &'a str,
     listener: TcpListener,
     timeout: u64, // in seconds
 }
 
-impl<'a> Server<'a> {
-    pub fn new(ip: &'a str, port: &'a str) -> Result<Server<'a>> {
+impl<'a> LoadBalancer<'a> {
+    pub fn new(ip: &'a str, port: &'a str) -> Result<LoadBalancer<'a>> {
         let address = format!("{}:{}", ip, port);
 
         let listener = TcpListener::bind(address).expect("Could not bind");
         println!("Server listening on {}:{}", ip, port);
-    
-        Ok(Server {
+
+        Ok(LoadBalancer {
             ip,
             port,
             listener,
@@ -32,7 +32,7 @@ impl<'a> Server<'a> {
 
         let handle_client = move |stream: TcpStream| {
             thread::spawn(move || {
-                Server::handle_client(stream);
+                LoadBalancer::handle_client(stream);
             });
         };
 
@@ -59,7 +59,7 @@ impl<'a> Server<'a> {
                 if size > 0 {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
-                    match Transmitter::new("127.0.0.1", "1337", &message) {
+                    match Server::new(&message) {
                         Ok(mut trans) => {
                             println!("{:?}", trans);
                             if let Ok(reponse) = trans.get_message() {
@@ -89,19 +89,19 @@ text/html;charset=utf-8\r\nContent-Length: 0\r\n\r\n"
 }
 
 #[derive(Debug)]
-pub struct Transmitter<'a> {
+pub struct Server<'a> {
     ip: &'a str,
     port: &'a str,
     stream: TcpStream,
     message: &'a str,
     buffer: Vec<u8>,
 }
-impl<'a> Transmitter<'a> {
-    pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> Result<Transmitter<'a>> {
+impl<'a> Server<'a> {
+    pub fn new(message: &'a str ) -> Result<Server<'a>> {
         let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 1337);
         let sixty = Duration::new(5, 0);
         match TcpStream::connect_timeout(&address, sixty){
-            Ok(a) => Ok(Transmitter {
+            Ok(a) => Ok(Server {
                 ip,
                 port,
                 stream: a,
@@ -133,7 +133,7 @@ impl<'a> Transmitter<'a> {
 }
 
 pub struct RoundRobin<'a>{
-    servers: Vec<Transmitter<'a>>,
+    servers: Vec<Server<'a>>,
     current: usize,
 }
 
@@ -145,11 +145,11 @@ impl<'a> RoundRobin<'a> {
         }
     }
 
-    pub fn add_server(&mut self, server: Transmitter<'a>) {
+    pub fn add_server(&mut self, server: Server<'a>) {
         self.servers.push(server);
     }
 
-    pub fn next(&mut self) -> &Transmitter<'a> {
+    pub fn next(&mut self) -> &Server<'a> {
         let server = &self.servers[self.current];
         if self.current == self.servers.len() - 1 {
             self.current = 0;
