@@ -17,6 +17,4 @@ fn main() {
 
     rusty_beam.expect("REASON").start().expect("TODO: panic message");
 
-
-
 }
