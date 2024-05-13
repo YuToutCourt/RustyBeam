@@ -131,3 +131,31 @@ impl<'a> Transmitter<'a> {
     }
 
 }
+
+pub struct RoundRobin<'a>{
+    servers: Vec<Transmitter<'a>>,
+    current: usize,
+}
+
+impl<'a> RoundRobin<'a> {
+    pub fn new() -> RoundRobin<'a> {
+        RoundRobin {
+            servers: Vec::new(),
+            current: 0,
+        }
+    }
+
+    pub fn add_server(&mut self, server: Transmitter<'a>) {
+        self.servers.push(server);
+    }
+
+    pub fn next(&mut self) -> &Transmitter<'a> {
+        let server = &self.servers[self.current];
+        if self.current == self.servers.len() - 1 {
+            self.current = 0;
+        } else {
+            self.current += 1;
+        }
+        server
+    }
+}
