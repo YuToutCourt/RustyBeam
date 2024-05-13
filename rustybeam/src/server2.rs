@@ -1,3 +1,4 @@
+/*
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, TcpListener, TcpStream};
 use std::io::{Read, Write};
 use std::time::Duration;
@@ -59,9 +60,9 @@ impl<'a> Server<'a> {
                 if size > 0 {
     
                     let message = String::from_utf8_lossy(&buffer[..size]);
+
                     match Transmitter::new("127.0.0.1", "1337", &message) {
                         Ok(mut trans) => {
-                            println!("{:?}", trans);
                             if let Ok(reponse) = trans.get_message() {
                                 stream.write_all(&reponse).unwrap();
                             }
@@ -70,7 +71,7 @@ impl<'a> Server<'a> {
                             }
                         }
                         Err(_) => {
-                            println!("c'est cassé");
+                            stream.write_all(b"An error occurred while processing the request").unwrap();
                         }
                     }
                 }
@@ -86,7 +87,6 @@ impl<'a> Server<'a> {
 
 }
 
-#[derive(Debug)]
 pub struct Transmitter<'a> {
     ip: &'a str,
     port: &'a str,
@@ -98,16 +98,18 @@ impl<'a> Transmitter<'a> {
     pub fn new(ip: &'a str, port: &'a str, message: &'a str ) -> Result<Transmitter<'a>> {
         let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)), 1337);
         let sixty = Duration::new(5, 0);
-        match TcpStream::connect_timeout(&address, sixty){
-            Ok(a) => Ok(Transmitter {
-                ip,
-                port,
-                stream: a,
-                message,
-                buffer: Vec::new(),
-            }),
-            Err(e) => Err(e),
-        }
+        let stream = match TcpStream::connect_timeout(&address, sixty){
+            Ok(a) => a,
+            Err(e) => return Err(e),
+        };
+        println!("{:?}", stream);
+        Ok(Transmitter {
+            ip,
+            port,
+            stream,
+            message,
+            buffer: Vec::new(),
+        })
     }
 
 
@@ -131,3 +133,4 @@ impl<'a> Transmitter<'a> {
     }
 
 }
+*/

@@ -1,3 +1,4 @@
+/*
 use crate::server::Server;
 
 
@@ -24,3 +25,4 @@ impl<'a> RoundRobin<'a> {
         server
     }
 }
+*/
