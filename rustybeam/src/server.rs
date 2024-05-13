@@ -64,8 +64,7 @@ impl<'a> Server<'a> {
                             println!("{:?}", trans);
                             if let Ok(reponse) = trans.get_message() {
                                 stream.write_all(&reponse).unwrap();
-                            }
-                            else {
+                            } else {
                                 stream.write_all(b"An error occurred while processing the request").unwrap();
                             }
                         }
