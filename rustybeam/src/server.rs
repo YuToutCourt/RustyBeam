@@ -70,7 +70,10 @@ impl<'a> Server<'a> {
                             }
                         }
                         Err(_) => {
-                            println!("c'est cassé");
+                            println!("Timeout");
+                            stream.write(b"HTTP/1.0 503 Service unavaible\r\nConnection: close\r\nContent-Type:
+text/html;charset=utf-8\r\nContent-Length: 0\r\n\r\n"
+                            ).unwrap();
                         }
                     }
                 }
@@ -113,7 +116,6 @@ impl<'a> Transmitter<'a> {
 
     pub fn get_message(&mut self) -> Result<&Vec<u8>> {
         &self.stream.write_all(self.message.as_bytes())?;
-        println!("Sent:\n{}", self.message);
 
         loop {
             let mut chunk = vec![0; 1024];
@@ -125,8 +127,7 @@ impl<'a> Transmitter<'a> {
         }
 
         let response = String::from_utf8_lossy(&self.buffer).into_owned();
-        println!("Received:\n{}", response);
-
+        println!("la réponse: {:?}", response);
         Ok(&self.buffer)
     }
 
